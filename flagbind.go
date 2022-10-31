@@ -47,7 +47,7 @@ func Bind(fs *flag.FlagSet, target interface{}) {
 			continue
 		}
 		parser.SetDefault()
-		fs.Func(parser.Name, parser.Usage, parser.Parse)
+		fs.Func(parser.Name, parser.Usage, parser.Set)
 	}
 }
 
@@ -59,7 +59,7 @@ type _Parser struct {
 	Usage     string
 }
 
-func (b *_Parser) Parse(value string) error {
+func (b *_Parser) Set(value string) error {
 	var err error
 	ifc, typ, kind := b.Target.Interface(), b.Target.Type(), b.Target.Kind()
 	switch ifc.(type) {
@@ -185,6 +185,16 @@ func (b *_Parser) Parse(value string) error {
 		} else {
 			b.Target.Set(reflect.ValueOf(&x))
 		}
+	case flag.Value:
+		err = ifc.(flag.Value).Set(value)
+		if err != nil {
+			return err
+		}
+	case func(string) error:
+		err = ifc.(func(string) error)(value)
+		if err != nil {
+			return err
+		}
 	default:
 		panic(fmt.Errorf("unknown type %s for %q", typ.Name(), b.Name))
 	}
@@ -193,7 +203,7 @@ func (b *_Parser) Parse(value string) error {
 
 func (b *_Parser) SetDefault() {
 	if b.DefaultOK {
-		if e := b.Parse(b.Default); e != nil {
+		if e := b.Set(b.Default); e != nil {
 			panic(fmt.Errorf("unable to parse default value for %q: %w", b.Name, e))
 		}
 		return
