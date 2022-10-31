@@ -57,6 +57,9 @@ func Bind(fs *flag.FlagSet, target interface{}) {
 	}
 }
 
+// Func is a type to use in struct as free form data types.
+type Func func(name string, value string) error
+
 type _Parser struct {
 	Target    reflect.Value
 	Name      string
@@ -197,6 +200,11 @@ func (p *_Parser) Set(value string) (err error) {
 		}
 	case func(string) error:
 		err = ifc.(func(string) error)(value)
+		if err != nil {
+			return err
+		}
+	case Func:
+		err = ifc.(Func)(p.Name, value)
 		if err != nil {
 			return err
 		}
