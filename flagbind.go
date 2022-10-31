@@ -28,7 +28,7 @@ func Bind(fs *flag.FlagSet, target interface{}) {
 	for i, j := 0, typ.NumField(); i < j; i++ {
 		sVal := val.Field(i)
 		sField := typ.Field(i)
-		if !sField.IsExported() || sField.Name == "-" {
+		if !sField.IsExported() || sField.Tag.Get("name") == "-" {
 			continue
 		}
 		parser := &_Parser{
