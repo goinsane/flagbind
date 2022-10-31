@@ -25,7 +25,7 @@ func Bind(fs *flag.FlagSet, target interface{}) {
 	for i, j := 0, typ.NumField(); i < j; i++ {
 		sField := typ.Field(i)
 		sVal := val.Field(i)
-		if sField.Anonymous || sField.Name == "-" {
+		if sField.Name == "-" {
 			continue
 		}
 		parser := &_Parser{
@@ -46,6 +46,9 @@ func Bind(fs *flag.FlagSet, target interface{}) {
 			fs.BoolVar(sVal.Addr().Interface().(*bool), parser.Name, false, parser.Usage)
 			continue
 		}
+		if e := parser.Set(""); e == errUnknownType {
+			panic(fmt.Errorf("unknown type for flag -%s", parser.Name))
+		}
 		parser.SetDefault()
 		fs.Func(parser.Name, parser.Usage, parser.Set)
 	}
@@ -59,131 +62,130 @@ type _Parser struct {
 	Usage     string
 }
 
-func (b *_Parser) Set(value string) error {
-	var err error
-	ifc, typ, kind := b.Target.Interface(), b.Target.Type(), b.Target.Kind()
+func (p *_Parser) Set(value string) (err error) {
+	ifc, _, kind := p.Target.Interface(), p.Target.Type(), p.Target.Kind()
 	switch ifc.(type) {
 	case bool, *bool:
 		var x bool
 		x, err = strconv.ParseBool(value)
 		if err != nil {
-			return err
+			return errParse
 		}
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(x))
+			p.Target.Set(reflect.ValueOf(x))
 		} else {
-			b.Target.Set(reflect.ValueOf(&x))
+			p.Target.Set(reflect.ValueOf(&x))
 		}
 	case int, *int:
 		var x int64
 		x, err = strconv.ParseInt(value, 10, 0)
 		if err != nil {
-			return err
+			return numError(err)
 		}
 		y := int(x)
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(y))
+			p.Target.Set(reflect.ValueOf(y))
 		} else {
-			b.Target.Set(reflect.ValueOf(&y))
+			p.Target.Set(reflect.ValueOf(&y))
 		}
 	case uint, *uint:
 		var x uint64
 		x, err = strconv.ParseUint(value, 10, 0)
 		if err != nil {
-			return err
+			return numError(err)
 		}
 		y := uint(x)
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(y))
+			p.Target.Set(reflect.ValueOf(y))
 		} else {
-			b.Target.Set(reflect.ValueOf(&y))
+			p.Target.Set(reflect.ValueOf(&y))
 		}
 	case int64, *int64:
 		var x int64
 		x, err = strconv.ParseInt(value, 10, 64)
 		if err != nil {
-			return err
+			return numError(err)
 		}
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(x))
+			p.Target.Set(reflect.ValueOf(x))
 		} else {
-			b.Target.Set(reflect.ValueOf(&x))
+			p.Target.Set(reflect.ValueOf(&x))
 		}
 	case uint64, *uint64:
 		var x uint64
 		x, err = strconv.ParseUint(value, 10, 64)
 		if err != nil {
-			return err
+			return numError(err)
 		}
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(x))
+			p.Target.Set(reflect.ValueOf(x))
 		} else {
-			b.Target.Set(reflect.ValueOf(&x))
+			p.Target.Set(reflect.ValueOf(&x))
 		}
 	case int32, *int32:
 		var x int64
 		x, err = strconv.ParseInt(value, 10, 32)
 		if err != nil {
-			return err
+			return numError(err)
 		}
 		y := int32(x)
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(y))
+			p.Target.Set(reflect.ValueOf(y))
 		} else {
-			b.Target.Set(reflect.ValueOf(&y))
+			p.Target.Set(reflect.ValueOf(&y))
 		}
 	case uint32, *uint32:
 		var x uint64
 		x, err = strconv.ParseUint(value, 10, 32)
 		if err != nil {
-			return err
+			return numError(err)
 		}
 		y := uint32(x)
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(y))
+			p.Target.Set(reflect.ValueOf(y))
 		} else {
-			b.Target.Set(reflect.ValueOf(&y))
+			p.Target.Set(reflect.ValueOf(&y))
 		}
 	case string, *string:
 		x := value
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(x))
+			p.Target.Set(reflect.ValueOf(x))
 		} else {
-			b.Target.Set(reflect.ValueOf(&x))
+			p.Target.Set(reflect.ValueOf(&x))
 		}
 	case float64, *float64:
 		var x float64
 		x, err = strconv.ParseFloat(value, 64)
 		if err != nil {
-			return err
+			return numError(err)
 		}
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(x))
+			p.Target.Set(reflect.ValueOf(x))
 		} else {
-			b.Target.Set(reflect.ValueOf(&x))
+			p.Target.Set(reflect.ValueOf(&x))
 		}
 	case float32, *float32:
 		var x float64
 		x, err = strconv.ParseFloat(value, 32)
 		if err != nil {
-			return err
+			return numError(err)
 		}
 		y := float32(x)
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(y))
+			p.Target.Set(reflect.ValueOf(y))
 		} else {
-			b.Target.Set(reflect.ValueOf(&y))
+			p.Target.Set(reflect.ValueOf(&y))
 		}
 	case time.Duration, *time.Duration:
 		var x time.Duration
 		x, err = time.ParseDuration(value)
 		if err != nil {
-			return err
+			return errParse
 		}
 		if kind != reflect.Pointer {
-			b.Target.Set(reflect.ValueOf(x))
+			p.Target.Set(reflect.ValueOf(x))
 		} else {
-			b.Target.Set(reflect.ValueOf(&x))
+			p.Target.Set(reflect.ValueOf(&x))
 		}
 	case flag.Value:
 		err = ifc.(flag.Value).Set(value)
@@ -196,17 +198,16 @@ func (b *_Parser) Set(value string) error {
 			return err
 		}
 	default:
-		panic(fmt.Errorf("unknown type %s for %q", typ.Name(), b.Name))
+		return errUnknownType
 	}
 	return nil
 }
 
-func (b *_Parser) SetDefault() {
-	if b.DefaultOK {
-		if e := b.Set(b.Default); e != nil {
-			panic(fmt.Errorf("unable to parse default value for %q: %w", b.Name, e))
+func (p *_Parser) SetDefault() {
+	if p.DefaultOK {
+		if e := p.Set(p.Default); e != nil {
+			panic(fmt.Errorf("unable to set default value for flag -%s: %w", p.Name, e))
 		}
-		return
 	}
-	b.Target.Set(reflect.Zero(b.Target.Type()))
+	p.Target.Set(reflect.Zero(p.Target.Type()))
 }
