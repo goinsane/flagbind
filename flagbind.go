@@ -220,5 +220,11 @@ func (p *_Parser) SetDefault() {
 			panic(fmt.Errorf("unable to set default value for flag -%s: %w", p.Name, e))
 		}
 	}
-	p.Target.Set(reflect.Zero(p.Target.Type()))
+	switch p.Target.Interface().(type) {
+	case flag.Value:
+	case func(string) error:
+	case Func:
+	default:
+		p.Target.Set(reflect.Zero(p.Target.Type()))
+	}
 }
