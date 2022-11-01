@@ -49,16 +49,10 @@ func Bind(fs *flag.FlagSet, target interface{}) {
 			fs.BoolVar(sVal.Addr().Interface().(*bool), parser.Name, false, parser.Usage)
 			continue
 		}
-		if e := parser.Set(""); e == errUnknownType {
-			panic(fmt.Errorf("unknown type for flag -%s", parser.Name))
-		}
 		parser.SetDefault()
 		fs.Func(parser.Name, parser.Usage, parser.Set)
 	}
 }
-
-// Func is a type to use in struct as free form data types.
-type Func func(name string, value string) error
 
 type _Parser struct {
 	Target    reflect.Value
@@ -69,7 +63,7 @@ type _Parser struct {
 }
 
 func (p *_Parser) Set(value string) (err error) {
-	ifc, _, kind := p.Target.Interface(), p.Target.Type(), p.Target.Kind()
+	ifc, kind := p.Target.Interface(), p.Target.Kind()
 	switch ifc.(type) {
 	case bool, *bool:
 		var x bool
@@ -203,8 +197,8 @@ func (p *_Parser) Set(value string) (err error) {
 		if err != nil {
 			return err
 		}
-	case Func:
-		err = ifc.(Func)(p.Name, value)
+	case func(string, string) error:
+		err = ifc.(func(string, string) error)(p.Name, value)
 		if err != nil {
 			return err
 		}
@@ -219,11 +213,16 @@ func (p *_Parser) SetDefault() {
 		if e := p.Set(p.Default); e != nil {
 			panic(fmt.Errorf("unable to set default value for flag -%s: %w", p.Name, e))
 		}
+		return
 	}
-	switch p.Target.Interface().(type) {
+	if e := p.Set(""); e == errUnknownType {
+		panic(fmt.Errorf("unknown type for flag -%s", p.Name))
+	}
+	ifc := p.Target.Interface()
+	switch ifc.(type) {
 	case flag.Value:
 	case func(string) error:
-	case Func:
+	case func(string, string) error:
 	default:
 		p.Target.Set(reflect.Zero(p.Target.Type()))
 	}
