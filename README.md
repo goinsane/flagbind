@@ -38,5 +38,5 @@ The usage tag defines flag usage by flag package.
 ### default
 
 The default tag defines default flag value by flag package. The default tag gets string value.
-When `flag.Parse` is called and the default tag isn't given, struct field get those values:
-If the struct field is pointer, default value is nil; otherwise default value is initial value of struct field.
+When the default tag isn't given; if the struct field is pointer, default value is nil.
+Otherwise default value is initial value of struct field.
