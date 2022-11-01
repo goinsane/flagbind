@@ -49,6 +49,7 @@ func Bind(fs *flag.FlagSet, target interface{}) {
 			fs.BoolVar(sVal.Addr().Interface().(*bool), parser.Name, false, parser.Usage)
 			continue
 		}
+		parser.Reset()
 		parser.SetDefault()
 		fs.Func(parser.Name, parser.Usage, parser.Set)
 	}
@@ -63,7 +64,7 @@ type _Parser struct {
 }
 
 func (p *_Parser) Set(value string) (err error) {
-	ifc, kind := p.Target.Interface(), p.Target.Kind()
+	ifc, _, kind := p.Target.Interface(), p.Target.Type(), p.Target.Kind()
 	switch ifc.(type) {
 	case bool, *bool:
 		var x bool
@@ -203,9 +204,75 @@ func (p *_Parser) Set(value string) (err error) {
 			return err
 		}
 	default:
-		return errUnknownType
+		panic(fmt.Errorf("unknown type for flag -%s", p.Name))
 	}
 	return nil
+}
+
+func (p *_Parser) Reset() {
+	ifc, typ, kind := p.Target.Interface(), p.Target.Type(), p.Target.Kind()
+	switch ifc.(type) {
+	case bool, *bool:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case int, *int:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case uint, *uint:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case int64, *int64:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case uint64, *uint64:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case int32, *int32:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case uint32, *uint32:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case string, *string:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case float64, *float64:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case float32, *float32:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case time.Duration, *time.Duration:
+		if kind != reflect.Pointer {
+		} else {
+			p.Target.Set(reflect.Zero(typ))
+		}
+	case flag.Value:
+	case func(string) error:
+	case func(string, string) error:
+	default:
+		panic(fmt.Errorf("unknown type for flag -%s", p.Name))
+	}
 }
 
 func (p *_Parser) SetDefault() {
@@ -214,16 +281,5 @@ func (p *_Parser) SetDefault() {
 			panic(fmt.Errorf("unable to set default value for flag -%s: %w", p.Name, e))
 		}
 		return
-	}
-	if e := p.Set(""); e == errUnknownType {
-		panic(fmt.Errorf("unknown type for flag -%s", p.Name))
-	}
-	ifc := p.Target.Interface()
-	switch ifc.(type) {
-	case flag.Value:
-	case func(string) error:
-	case func(string, string) error:
-	default:
-		p.Target.Set(reflect.Zero(p.Target.Type()))
 	}
 }

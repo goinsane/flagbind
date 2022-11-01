@@ -1,6 +1,3 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
@@ -22,11 +19,14 @@ func main() {
 		IgnoredFlag int64   `name:"-"`
 		FuncFlag    func(string) error
 		DefFlag     int `default:"35"`
+		Def2Flag    int
 	}
 	st.FuncFlag = func(value string) error {
 		fmt.Println(value)
 		return nil
 	}
+	st.DefFlag = 45
+	st.Def2Flag = 55
 	flagbind.Bind(fs, &st)
 	args := []string{"-bool-flag", "-bool-flag2", "true", "-int-flag", "10", "-str", "def", "-cust", "10.6", "-func-flag", "aaa"}
 	_ = fs.Parse(args)

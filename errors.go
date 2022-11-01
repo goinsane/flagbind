@@ -26,6 +26,3 @@ func numError(err error) error {
 	}
 	return err
 }
-
-// errUnknownType is internal use only.
-var errUnknownType = errors.New("unknown type")
