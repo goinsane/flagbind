@@ -17,11 +17,11 @@ import (
 // It will panic when target isn't struct pointer or nil, or any struct field has unknown type.
 func Bind(fs *flag.FlagSet, target interface{}) {
 	val := reflect.ValueOf(target)
+	if val.IsNil() {
+		panic("target must be non-nil")
+	}
 	if val.Kind() != reflect.Pointer || val.Elem().Kind() != reflect.Struct {
 		panic("target must be struct pointer")
-	}
-	if val.IsNil() {
-		panic("target nil pointer")
 	}
 	val = val.Elem()
 	typ := val.Type()
